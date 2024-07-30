@@ -7,6 +7,12 @@ from flask_restful import Resource
 from models import Product, User
 from config import db, api, app
 
+print('Hello World')
+
+class Hello(Resource):
+    def get(self):
+        print('hello world')
+api.add_resource(Hello, '/')
 
 class Products(Resource):
     def get(self):

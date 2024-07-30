@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, jsonify, request, make_response
+from flask import Flask
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt

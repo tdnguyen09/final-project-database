@@ -79,12 +79,13 @@ class User(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String)
     last_name = db.Column(db.String)
-    email = db.Column(db.String)
+    email = db.Column(db.String, unique=True)
     _password_hash = db.Column(db.String, nullable=False)
     address = db.Column(db.String)
     state = db.Column(db.String)
     postcode = db.Column(db.Integer)
-    phone_number = db.Column(db.Integer)
+    suburb = db.Column(db.String)
+    phone_number = db.Column(db.String)
 
     orders = db.relationship('Order', backref='user')
     products = db.relationship('Product', secondary=wishlist, back_populates="user")
@@ -106,7 +107,6 @@ class User(db.Model, SerializerMixin):
             self._password_hash, password.encode('utf-8')
         )
 
-# hash_password => before store or in models
 
 class Order(db.Model, SerializerMixin):
     __tablename__ = 'orders'
@@ -122,3 +122,30 @@ class Order(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f'<Order {self.id}, total: {self.total}>'
+
+
+class Admin(db.Model, SerializerMixin):
+    __tablename__ = 'admins'
+
+    id = db.Column(db.Integer, primary_key=True)
+    usename = db.Column(db.String, unique=True)
+    _password_hash = db.Column(db.String, nullable=False)
+
+    def __repr__(self):
+        return f'admin {self.id} has {self.usename}'
+    
+    @hybrid_property
+    def password_hash(self):
+        return self._password_hash
+    
+    @password_hash.setter
+    def password_hash(self, password):
+        password_hash = bcrypt.generate_password_hash(password.encode('utf-8'))
+        self._password_hash = password_hash.decode('utf-8')
+    
+    def authenticate(self, password):
+        return bcrypt.check_password_hash(
+            self._password_hash, password.encode('utf-8')
+        )
+
+    

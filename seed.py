@@ -5,7 +5,7 @@ from models import User, Product
 
 with app.app_context():
     print('Deleting existing product...')
-    User.query.delete()
+    
 
     print('Creating product objects...')
     lego_city_60373 = Product(

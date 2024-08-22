@@ -7,10 +7,26 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from sqlalchemy import MetaData
 from flask_sqlalchemy import SQLAlchemy
+from datetime import timedelta
 
 app = Flask(__name__)
 
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
+app.config['SECRET_KEY'] = 'unique_string'
+# app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default_secret_key')
+app.config['SESSION_PERMANENT'] = True 
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
+app.config['SESSION_COOKIE_SECURE'] = False  # True if using HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None' 
+app.config['SESSION_COOKIE_PATH'] = '/'
+# app.config['SESSION_COOKIE_DOMAIN'] = 'localhost'
+
+
+
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
@@ -19,9 +35,12 @@ metadata = MetaData(naming_convention={
 })
 db = SQLAlchemy(metadata=metadata)
 
-migrate = Migrate(app, db)
 db.init_app(app)
+migrate = Migrate(app, db)
 
 api = Api(app)
 bcrypt = Bcrypt(app)
-CORS(app)
+CORS(app, supports_credentials=True)
+
+# if __name__ == "__main__":
+#     app.run(host='localhost', port=5000)

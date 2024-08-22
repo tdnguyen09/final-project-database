@@ -4,7 +4,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from config import bcrypt, db
 from datetime import datetime
 
-# db = SQLAlchemy()
 
 
 order_product = db.Table('order_product',
@@ -19,10 +18,6 @@ wishlist = db.Table('wishlist',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
 )
 
-# product_category = db.Table('product_category',
-#     db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True),
-#     db.Column('category_id', db.Integer, db.ForeignKey('categories.id'), primary_key=True)
-# )
 
 class Product(db.Model, SerializerMixin):
     __tablename__ = 'products'
@@ -40,58 +35,111 @@ class Product(db.Model, SerializerMixin):
     is_it_new = db.Column(db.Boolean)
     is_it_clearance = db.Column(db.Boolean)
     is_it_onsale = db.Column(db.Boolean)
+    is_it_preorder = db.Column(db.Boolean)
 
-    # brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'))
+    brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
 
     orders = db.relationship('Order', secondary=order_product, back_populates='products')
     user = db.relationship('User', secondary=wishlist, back_populates='products')
-    # categories = db.relationship('Category', secondary=product_category, back_populates='products')
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'image': self.image,
+            'price': self.price,
+            'description': self.description,
+            'product_depth':self.product_depth,
+            'product_weight': self.product_weight,
+            'product_height': self.product_height,
+            'product_width': self.product_width,
+            'discount':self.discount,
+            'is_it_new':self.is_it_new,
+            'is_it_clearance':self.is_it_clearance,
+            'is_it_onsale':self.is_it_onsale,
+            'is_it_preorder':self.is_it_preorder,
+            'brand': self.brand.brand_name,
+            'categories': self.category.category_name
+        }
 
     def __repr__(self):
-        return f'<Product {self.name} | In Stock: {self.is_in_stock}>'
+        return f'<Product {self.name}>'
 
-# class Brand(db.Model, SerializerMixin):
-#     __tablename__ = 'brands'
+class Brand(db.Model, SerializerMixin):
+    __tablename__ = 'brands'
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String)
+    id = db.Column(db.Integer, primary_key=True)
+    brand_name = db.Column(db.String)
 
-#     products = db.relationship('Product', backref='brand')
+    products = db.relationship('Product', backref='brand')
 
-#     def __repr__(self):
-#         return f'<Brand {self.name}>'
+    def __repr__(self):
+        return f'<Brand {self.name}>'
 
-# class Category(db.Model, SerializerMixin):
-#     __tablename__ = "categories"
+class Category(db.Model, SerializerMixin):
+    __tablename__ = "categories"
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.Strinng)
+    id = db.Column(db.Integer, primary_key=True)
+    category_name = db.Column(db.String)
 
-#     products = db.relationship('Product', secondary=product_category, back_populates="categories")
+    products = db.relationship('Product', backref='catergory')
 
-#     def __repr__(self):
-#         return f'<Catergory {self.name}>'
+    def __repr__(self):
+        return f'<Catergory {self.name}>'
 
-class User(db.Model, SerializerMixin):
+class User(db.Model,SerializerMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String)
-    last_name = db.Column(db.String)
+    firstname = db.Column(db.String)
+    lastname = db.Column(db.String)
     email = db.Column(db.String, unique=True)
     _password_hash = db.Column(db.String, nullable=False)
     address = db.Column(db.String)
     state = db.Column(db.String)
     postcode = db.Column(db.Integer)
     suburb = db.Column(db.String)
-    phone_number = db.Column(db.String)
+    phonenumber = db.Column(db.String)
 
     orders = db.relationship('Order', backref='user')
     products = db.relationship('Product', secondary=wishlist, back_populates="user")
 
+    def to_dict(self):
+        orders = [
+            {
+                'id': order.id,
+                'total': order.total,
+                'order_date': order.order_date.isoformat() if order.order_date else None
+            }
+            for order in self.orders
+        ]
+        products = [
+            {
+                'id':product.id,
+                'name': product.name,
+                'image': product.image,
+                'price': product.price,
+                'discount':product.discount
+            }
+            for product in self.products
+        ]
+        return {
+            'id': self.id,
+            'firstname': self.firstname,
+            'lastname': self.lastname,
+            'email': self.email,
+            'address': self.address,
+            'state': self.state,
+            'postcode': self.postcode,
+            'suburb': self.suburb,
+            'phonenumber': self.phonenumber,
+            'orders': orders,
+            'products': products
+        }
+
     def __repr__(self):
-        return f'<User {self.first_name} {self.last_name}, ID: {self.id}>'
+        return f'<User {self.firstname} {self.lastname}, ID: {self.id}>'
 
     @hybrid_property
     def password_hash(self):
@@ -112,7 +160,6 @@ class Order(db.Model, SerializerMixin):
     __tablename__ = 'orders'
 
     id = db.Column(db.Integer, primary_key=True)
-    total_items = db.Column(db.Integer)
     total = db.Column(db.Float)
     order_date = db.Column(db.DateTime, default=datetime.utcnow)
     

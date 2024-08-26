@@ -59,8 +59,8 @@ class Product(db.Model, SerializerMixin):
             'is_it_clearance':self.is_it_clearance,
             'is_it_onsale':self.is_it_onsale,
             'is_it_preorder':self.is_it_preorder,
-            'brand': self.brand.brand_name,
-            'categories': self.category.category_name
+            'brand': self.brand.brand_name if self.brand else 'No brand assigned',
+            'category': self.category.category_name if self.category else 'No category assigned'
         }
 
     def __repr__(self):
@@ -83,7 +83,7 @@ class Category(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     category_name = db.Column(db.String)
 
-    products = db.relationship('Product', backref='catergory')
+    products = db.relationship('Product', backref='category')
 
     def __repr__(self):
         return f'<Catergory {self.name}>'

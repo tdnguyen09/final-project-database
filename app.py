@@ -2,10 +2,10 @@
 
 import os
 
-from flask import Flask, jsonify, request, make_response, redirect, url_for, session
+from flask import Flask, jsonify, request, make_response, session
 from flask_restful import Resource
 from config import db, api, app
-from models import Product, User, Admin, Order, order_product, wishlist
+from models import Product, User, Admin, Order, order_product, wishlist, Brand, Category
 # from datetime import timedelta
 
 # app.permanent_session_lifetime = timedelta(minutes=5)
@@ -43,9 +43,24 @@ class ProductByID(Resource):
     def patch(self,id):
         data = request.get_json()
         product = Product.query.filter_by(id=id).first()
-        for attr in data:
-            if hasattr(product, attr):
-                setattr(product, attr, data.get(attr))
+        for key,value in data.items():
+            if key == 'category':
+                category = Category.query.filter_by(category_name=value).first()
+                if not category:
+                    category = Category(category_name = value)
+                    db.session.add(category)
+                    db.session.commit()
+                setattr(product, 'category_id', category.id)
+            elif key == 'brand':
+                brand = Brand.query.filter_by(brand_name = value).first()
+                if not brand:
+                    brand = Brand(brand_name = value)
+                    db.session.add(brand)
+                    db.session.commit()
+                setattr(product, 'brand_id', brand.id)
+            else:
+                if hasattr(product, key):
+                    setattr(product, key, value)
 
         db.session.merge(product)
         db.session.commit()
@@ -299,16 +314,16 @@ class AdminDashboard(Resource):
         if product:
             return make_response(jsonify({'message':'Product already existed'}), 400)
         
-        brand = Brand.query.filter(Brand.name == brand_name).first()
+        brand = Brand.query.filter(Brand.brand_name == brand_name).first()
         if not brand:
-            new_brand = Brand(brand_name=brand_name)
-            db.session.add(new_brand)
+            brand = Brand(brand_name=brand_name)
+            db.session.add(brand)
             db.session.commit()
 
-        category = Catergory.query.filter(Catergory.name == category_name).first()
+        category = Category.query.filter(Category.category_name == category_name).first()
         if not category:
-            new_category = Category(catergory_name = category_name)
-            db.session.add(new_category)
+            category = Category(category_name = category_name)
+            db.session.add(category)
             db.session.commit()
         
         new_product = Product(
@@ -326,7 +341,7 @@ class AdminDashboard(Resource):
             is_it_onsale=is_it_onsale,
             is_it_preorder=is_it_preorder,
             brand_id=brand.id,
-            catergory_id=catergory.id)
+            category_id=category.id)
 
         db.session.add(new_product)
         db.session.commit()
@@ -349,5 +364,3 @@ class AdminDashboard(Resource):
         return make_response(jsonify({'message': 'Product deleted successfully'}), 200)
 api.add_resource(AdminDashboard, '/dashboard')
 
-# return redirect(url_for('home'))
-# render_template

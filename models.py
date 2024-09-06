@@ -87,6 +87,11 @@ class Category(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f'<Catergory {self.name}>'
+    
+    def to_dict(self):
+        return {
+            'category_name': self.category_name
+        }
 
 class User(db.Model,SerializerMixin):
     __tablename__ = 'users'
@@ -120,7 +125,9 @@ class User(db.Model,SerializerMixin):
                 'name': product.name,
                 'image': product.image,
                 'price': product.price,
-                'discount':product.discount
+                'discount':product.discount,
+                'is_it_clearance':product.is_it_clearance,
+                'is_it_onsale': product.is_it_onsale
             }
             for product in self.products
         ]
@@ -175,7 +182,7 @@ class Admin(db.Model, SerializerMixin):
     __tablename__ = 'admins'
 
     id = db.Column(db.Integer, primary_key=True)
-    usename = db.Column(db.String, unique=True)
+    username = db.Column(db.String, unique=True)
     _password_hash = db.Column(db.String, nullable=False)
 
     def __repr__(self):

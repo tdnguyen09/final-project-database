@@ -33,9 +33,12 @@ class ProductByID(Resource):
             return make_response(jsonify({'error':'Invalid data'}), 400)
 
         if user and product:
-            user.products.append(product)
-            db.session.commit()
-            return make_response(jsonify({'message':f'{product.name} added to wishlist successfully'}), 201)
+            if product in user.products:
+                return make_response(jsonify({'message': 'product already in the wishlist'}),400)
+            else:
+                user.products.append(product)
+                db.session.commit()
+                return make_response(jsonify({'message':f'{product.name} added to wishlist successfully'}), 201)
         else:
             return make_response(jsonify({'error': 'User or product not found'}), 404)
         
@@ -81,6 +84,13 @@ class ProductByID(Resource):
             return make_response(jsonify({'error':'product not found'}), 404)
 api.add_resource(ProductByID, '/products/<int:id>')
 #done
+
+class Categories(Resource):
+    def get(self):
+        categories = [category.to_dict() for category in Category.query.all()]
+        return make_response(jsonify(categories), 200)
+api.add_resource(Categories, '/categories')
+
 class Hello(Resource):
     def get(seelf):
         print('hello world')
@@ -100,7 +110,7 @@ class Login(Resource):
             session.permanent = True
             return user.to_dict(), 200
 
-        return {'error':'Invalid email or password'}, 401
+        return make_response(jsonify({'error':'Invalid email or password'}), 401)
 api.add_resource(Login, '/login')
 
 # class GetSession(Resource):
@@ -133,14 +143,20 @@ class UserUpdate(Resource):
         data = request.get_json()
         # user = User.query.filter(User.id == session.get('user_id')).first()
         user = User.query.filter(User.id == data.get('id')).first()
-        for attr in data:
-            if hasattr(user, attr):
-                setattr(user, attr, data.get(attr))
-        db.session.merge(user)
-        db.session.commit()
+        if user is None:
+            return make_response(jsonify({'message':'user not found'}), 400)
+        else:
+            for attr, value in data.items():
+                if hasattr(user, attr):
+                    if attr in ['orders', 'products']:
+                        continue
+                    setattr(user, attr, value)
+            db.session.merge(user)
+            db.session.commit()
 
         response_dict = user.to_dict()
         return make_response(response_dict, 200)
+        # return make_response(user)
 api.add_resource(UserUpdate, '/update-detail')
 #done
 class Signup(Resource):
@@ -161,7 +177,7 @@ class Signup(Resource):
         
         user = User.query.filter(User.email == email).first()
         if user:
-            return jsonify({'message':'Email already registed'}), 400
+            return make_response(jsonify({'message':'Email already registed'}), 400)
         
         new_user = User(
             firstname=firstname, 
@@ -176,6 +192,8 @@ class Signup(Resource):
 
         db.session.add(new_user)
         db.session.commit()
+       
+        session['user_id']=new_user.id
 
         new_user_dict = new_user.to_dict()
 
@@ -189,7 +207,18 @@ class UserInfo(Resource):
 
 api.add_resource(UserInfo, '/users')
 
+class CheckEmail(Resource):
+    def get(self):
+        email = request.args.get('email')
+        if not email:
+            return make_response(jsonify({'error':'Email is required'}),400)
 
+        user = User.query.filter_by(email=email).first()
+        if user:
+            return make_response(jsonify({'available': False}),201)
+
+        return make_response(jsonify({'available': True}),200)
+api.add_resource(CheckEmail, '/checkemail')
 
 class Orders(Resource):
     def post(self):
@@ -251,7 +280,7 @@ class Admins(Resource):
         password = request.get_json()['password']
 
         new_admin = Admin(
-            usename = usename
+            username = usename
         )
 
         new_admin.password_hash = password
@@ -267,9 +296,8 @@ api.add_resource(Admins, '/admin')
 class AdminLogin(Resource):
     def post(self):
         username = request.get_json()['username']
+        admin = Admin.query.filter_by(username=username).first()
         password = request.get_json()['password']
-
-        admin = Admin.query.filter(Admin.username == usename)
 
         if admin.authenticate(password):
             session['admin_id'] = admin.id

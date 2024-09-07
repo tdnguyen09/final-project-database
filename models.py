@@ -115,7 +115,7 @@ class User(db.Model,SerializerMixin):
             {
                 'id': order.id,
                 'total': order.total,
-                'order_date': order.order_date.isoformat() if order.order_date else None
+                'order_date': order.order_date.isoformat() if order.order_date else None,
                 'products':[
                     {
                         'id':product.id,

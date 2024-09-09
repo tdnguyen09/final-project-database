@@ -113,12 +113,12 @@ class Login(Resource):
         return make_response(jsonify({'error':'Invalid email or password'}), 401)
 api.add_resource(Login, '/login')
 
-# class GetSession(Resource):
-#     def get(self):
-#         session['user_id'] = 2  # Example of setting a user ID in the session
-#         session.permanent = True  # Make session permanent
-#         return "Session is set!"
-# api.add_resource(GetSession,'/getsession')
+class GetSession(Resource):
+    def get(self):
+        user_id = session.get('user_id', 'Not set')
+        session.permanent = True  
+        return jsonify({'user_id': user_id})  
+api.add_resource(GetSession,'/getsession')
 
 class CheckSession(Resource):
     def get(self):

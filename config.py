@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, session
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt
@@ -18,10 +18,10 @@ app.config['SECRET_KEY'] = 'unique_string'
 # app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default_secret_key')
 app.config['SESSION_PERMANENT'] = True 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
-app.config['SESSION_COOKIE_SECURE'] = False  # True if using HTTPS
+app.config['SESSION_COOKIE_SECURE'] = True  # True if using HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None' 
-app.config['SESSION_COOKIE_PATH'] = '/'
+app.config['SESSION_COOKIE_DOMAIN'] = '.onrender.com'
 # app.config['SESSION_COOKIE_DOMAIN'] = 'localhost'
 
 

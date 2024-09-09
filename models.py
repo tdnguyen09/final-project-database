@@ -6,12 +6,12 @@ from datetime import datetime
 
 
 
-order_product = db.Table('order_product',
-    db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
-    db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True),
-    db.Column('quantity', db.Integer),
-    db.Column('price', db.Integer)
-)
+# order_product = db.Table('order_product',
+#     db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
+#     db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True),
+#     db.Column('quantity', db.Integer),
+#     db.Column('price', db.Integer)
+# )
 
 wishlist = db.Table('wishlist',
     db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True),
@@ -40,7 +40,7 @@ class Product(db.Model, SerializerMixin):
     brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'))
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
 
-    orders = db.relationship('Order', secondary=order_product, back_populates='products')
+    order_products = db.relationship('OrderProduct', back_populates='product')
     user = db.relationship('User', secondary=wishlist, back_populates='products')
 
     def to_dict(self):
@@ -118,15 +118,17 @@ class User(db.Model,SerializerMixin):
                 'order_date': order.order_date.isoformat() if order.order_date else None,
                 'products':[
                     {
-                        'id':product.id,
-                        'name':product.name,
-                        'quantity':item.quantity
+                        'id':order_product.product.id,
+                        'name':order_product.product.name,
+                        'quantity':order_product.quantity,
+                        'price':order_product.price
                     }
-                    for item in order.order_product
+                    for order_product in order.order_products
                 ]
             }
             for order in self.orders
         ]
+        
         products = [
             {
                 'id':product.id,
@@ -180,11 +182,41 @@ class Order(db.Model, SerializerMixin):
     
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    products = db.relationship('Product', secondary=order_product, back_populates='orders')
+    order_products = db.relationship('OrderProduct', back_populates='order')
 
     def __repr__(self):
         return f'<Order {self.id}, total: {self.total}>'
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'total': self.total,
+            'order_date': self.order_date.isoformat(),
+            'products': [
+                {
+                    'id': order_product.product.id,
+                    'name': order_product.product.name,
+                    'price': order_product.price,
+                    'quantity': order_product.quantity
+                }
+                for order_product in self.order_products
+            ]
+        }
+
+class OrderProduct(db.Model, SerializerMixin):
+    __tablename__='order_product'
+
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), primary_key=True)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+
+    order = db.relationship('Order', back_populates='order_products')
+    product = db.relationship('Product', back_populates='order_products')
+
+    def __repr__(self):
+        return f'product {product_id} has {quantity} unit(s) in {order_id} '
 
 class Admin(db.Model, SerializerMixin):
     __tablename__ = 'admins'

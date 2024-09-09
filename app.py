@@ -5,7 +5,7 @@ import os
 from flask import Flask, jsonify, request, make_response, session
 from flask_restful import Resource
 from config import db, api, app
-from models import Product, User, Admin, Order, order_product, wishlist, Brand, Category
+from models import Product, User, Admin, Order, OrderProduct, wishlist, Brand, Category
 # from datetime import timedelta
 
 # app.permanent_session_lifetime = timedelta(minutes=5)
@@ -251,25 +251,20 @@ class Orders(Resource):
             product=Product.query.get(product_id)
             if not product:
                 return make_response(jsonify({'error':f'Product with id {product_id} not found'}), 404)
-            db.session.execute(order_product.insert().values(order_id=order.id, product_id=product_id, quantity=quantity))
-
+            order_product = OrderProduct(order_id=order.id, product_id=product_id, quantity=quantity, price=product.price)
+            db.session.add(order_product)
+        
         db.session.commit()
-        product_data = db.session.query(Product, order_product.c.quantity).join(order_product).filter(order_product.c.order_id == order.id).all()
-        order_dict = {
-            'id': order.id,
-            'total': order.total,
-            'order_date': order.order_date.isoformat(),
-            'products': [
-                {
-                    'id': product.id,
-                    'name': product.name,
-                    'quantity': quantity
-                }
-                for product, quantity in product_data
-            ]
-        }
+
+        order_dict = order.to_dict()
         return make_response(jsonify(order_dict), 200)    
 api.add_resource(Orders, '/checkout')
+
+class RetriveOrder(Resource):
+    def get(self):
+        orders = [order.to_dict() for order in Order.query.all()]
+        return make_response(jsonify(orders), 200)
+api.add_resource(RetriveOrder, '/orders')
 
 class Admins(Resource):
     def get (self):

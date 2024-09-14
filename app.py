@@ -5,7 +5,7 @@ import os
 from flask import Flask, jsonify, request, make_response, session
 from flask_restful import Resource
 from config import db, api, app
-from models import Product, User, Admin, Order, OrderProduct, wishlist, Brand, Category
+from models import Product, User, Admin, Order, OrderProduct, wishlist, Brand, Category, Cart
 # from datetime import timedelta
 
 # app.permanent_session_lifetime = timedelta(minutes=5)
@@ -83,6 +83,84 @@ class ProductByID(Resource):
         else:
             return make_response(jsonify({'error':'product not found'}), 404)
 api.add_resource(ProductByID, '/products/<int:id>')
+# class CartRetrive(Resource):
+#     def get(self):
+#         user_id= request.args.get('userID')
+        
+#         cart_items= Cart.query.filter_by(user_id=user_id).all()
+#         if not cart_items:
+#             return make_response(jsonify({'error':'No cart items found'}))
+        
+#         cart_items_dict = [item.to_dict() for item in cart_items]
+        
+#         return make_response(jsonify(cart_items_dict),200)
+# api.add_resource(CartRetrive, '/checkcart')
+class AddToCart(Resource):
+    def post(self, id):
+        data = request.get_json()
+        user_id = data.get('userLoginID')
+        quantity = data.get('quantity')
+
+        user = User.query.filter_by(id=user_id).first()
+        product= Product.query.filter_by(id=id).first()
+        if not product or not user:
+            return make_response(jsonify({'message':'Invalid data'}),400)
+
+        cart_item = Cart.query.filter_by(user_id=user_id, product_id=id).first()
+        if cart_item:
+            cart_item.quantity=quantity
+        else:
+            cart_item = Cart(
+                user_id=user_id,
+                product_id=id,
+                quantity=quantity
+            )
+            db.session.add(cart_item)
+        db.session.commit()
+        return make_response(jsonify({'message': f'{product.name} is added successfully to cart'}),200)
+
+    def patch(self, id):
+        data = request.get_json()
+        user_id = data.get('user_id')
+        new_quantity = data.get('quantity')
+
+        user = User.query.filter_by(id=user_id).first()
+        product= Product.query.filter_by(id=id).first()
+        if not product or not user:
+            return make_response(jsonify({'message':'Invalid data'}),400)
+
+        cart_item = Cart.query.filter_by(user_id=user_id, product_id=id).first()
+        if not cart_item:
+            return make_response(jsonify({'error':'item not found'}),404)
+
+        cart_item.quantity = new_quantity
+        db.session.commit()
+        
+        # for attr, value in data.item():
+        #     if hasattr(cart_item, attr):
+        #         setattr(cart_item, attr, value)
+        # db.session.merge(cart_item)
+        db.session.commit() 
+
+        return make_response(jsonify({'message': 'Cart quantity updated successfully'}), 200)
+        
+    def delete(self, id):
+        user_id = request.get_json()
+        
+        user = User.query.filter_by(id=user_id).first()
+        product= Product.query.filter_by(id=id).first()
+
+        if not user or not product:
+            return make_response(jsonify({'error':'invalid data'}),404)
+        
+        cart_item = Cart.query.filter_by(user_id=user_id, product_id=id).first()
+        if not cart_item:
+            return make_response(jsonify({'error':'item not found'}),404)
+        
+        db.session.delete(cart_item)
+        db.session.commit()
+        return make_response(jsonify({'message':'Product removed from cart successfully'}),200)
+api.add_resource(AddToCart, '/products/<int:id>/cart')
 #done
 
 class Categories(Resource):

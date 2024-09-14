@@ -6,13 +6,6 @@ from datetime import datetime
 
 
 
-# order_product = db.Table('order_product',
-#     db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
-#     db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True),
-#     db.Column('quantity', db.Integer),
-#     db.Column('price', db.Integer)
-# )
-
 wishlist = db.Table('wishlist',
     db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
@@ -41,6 +34,7 @@ class Product(db.Model, SerializerMixin):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
 
     order_products = db.relationship('OrderProduct', back_populates='product')
+    carts = db.relationship('Cart', back_populates='product')
     user = db.relationship('User', secondary=wishlist, back_populates='products')
 
     def to_dict(self):
@@ -109,6 +103,7 @@ class User(db.Model,SerializerMixin):
 
     orders = db.relationship('Order', backref='user')
     products = db.relationship('Product', secondary=wishlist, back_populates="user")
+    carts = db.relationship('Cart', back_populates='user')
 
     def to_dict(self):
         orders = [
@@ -141,6 +136,21 @@ class User(db.Model,SerializerMixin):
             }
             for product in self.products
         ]
+        carts = [
+            {
+                'id':cart.product.id,
+                'name': cart.product.name,
+                'image': cart.product.image,
+                'price': cart.product.price,
+                'discount':cart.product.discount,
+                'is_is_new':cart.product.is_it_new,
+                'is_is_preorder': cart.product.is_it_preorder,
+                'is_it_clearance':cart.product.is_it_clearance,
+                'is_it_onsale': cart.product.is_it_onsale,
+                'quantity': cart.quantity
+            }
+            for cart in self.carts
+        ]
         return {
             'id': self.id,
             'firstname': self.firstname,
@@ -152,7 +162,8 @@ class User(db.Model,SerializerMixin):
             'suburb': self.suburb,
             'phonenumber': self.phonenumber,
             'orders': orders,
-            'products': products
+            'products': products,
+            'carts':carts
         }
 
     def __repr__(self):
@@ -207,6 +218,7 @@ class Order(db.Model, SerializerMixin):
 class OrderProduct(db.Model, SerializerMixin):
     __tablename__='order_product'
 
+    id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), primary_key=True)
     quantity = db.Column(db.Integer, nullable=False)
@@ -216,7 +228,40 @@ class OrderProduct(db.Model, SerializerMixin):
     product = db.relationship('Product', back_populates='order_products')
 
     def __repr__(self):
-        return f'product {product_id} has {quantity} unit(s) in {order_id} '
+        return f'product {product_id} has {quantity} unit(s) in {order_id}'
+
+class Cart(db.Model, SerializerMixin):
+    __tablename__ = 'carts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id= db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    product_id= db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+
+    user = db.relationship('User', back_populates='carts')
+    product = db.relationship('Product', back_populates='carts')
+
+    def __repr__(self):
+        return f"Product{product_id} is already in user {user_id}'s shopping cart"
+
+    def to_dict(self):
+        return {
+            'id':self.id,
+            'user_id': self.user_id,
+            'product': self.product.to_dict() if self.product else None,
+            'quantity': self.quantity
+        }
+
+# class Rating(db.Model, SerializerMixin):
+#     __tablename__='ratings'
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id= db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+#     product_id= db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+#     rating = db.Column(db.Integer, nullable=False)
+
+#     def __repr__(self):
+#         return f" Product {product_id}  has {rating} star(s)"
 
 class Admin(db.Model, SerializerMixin):
     __tablename__ = 'admins'

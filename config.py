@@ -22,6 +22,8 @@ app.config['SESSION_COOKIE_SECURE'] = True  # True if using HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None' 
 app.config['SESSION_COOKIE_DOMAIN'] = '.onrender.com'
+app.config['REMEMBER_COOKIE_SECURE'] = True
+app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 # app.config['SESSION_COOKIE_DOMAIN'] = 'localhost'
 
 

@@ -8,6 +8,7 @@ from flask_cors import CORS
 from sqlalchemy import MetaData
 from flask_sqlalchemy import SQLAlchemy
 from datetime import timedelta
+import stripe
 
 app = Flask(__name__)
 
@@ -25,6 +26,13 @@ app.config['SESSION_COOKIE_DOMAIN'] = '.onrender.com'
 app.config['REMEMBER_COOKIE_SECURE'] = True
 app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 # app.config['SESSION_COOKIE_DOMAIN'] = 'localhost'
+
+stripe_keys = {
+    "secret_key": os.environ["STRIPE_SECRET_KEY"],
+    "publishable_key": os.environ["STRIPE_PUBLISHABLE_KEY"],
+}
+
+stripe.api_key = stripe_keys["secret_key"]
 
 
 

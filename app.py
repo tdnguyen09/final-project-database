@@ -6,7 +6,7 @@ from flask import Flask, jsonify, request, make_response, session
 from flask_restful import Resource
 from config import db, api, app
 from models import Product, User, Admin, Order, OrderProduct, wishlist, Brand, Category, Cart
-# from datetime import timedelta
+import stripe
 
 # app.permanent_session_lifetime = timedelta(minutes=5)
 # app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
@@ -119,30 +119,30 @@ class AddToCart(Resource):
         db.session.commit()
         return make_response(jsonify({'message': f'{product.name} is added successfully to cart'}),200)
 
-    def patch(self, id):
-        data = request.get_json()
-        user_id = data.get('user_id')
-        new_quantity = data.get('quantity')
+    # def patch(self, id):
+    #     data = request.get_json()
+    #     user_id = data.get('user_id')
+    #     new_quantity = data.get('quantity')
 
-        user = User.query.filter_by(id=user_id).first()
-        product= Product.query.filter_by(id=id).first()
-        if not product or not user:
-            return make_response(jsonify({'message':'Invalid data'}),400)
+    #     user = User.query.filter_by(id=user_id).first()
+    #     product= Product.query.filter_by(id=id).first()
+    #     if not product or not user:
+    #         return make_response(jsonify({'message':'Invalid data'}),400)
 
-        cart_item = Cart.query.filter_by(user_id=user_id, product_id=id).first()
-        if not cart_item:
-            return make_response(jsonify({'error':'item not found'}),404)
+    #     cart_item = Cart.query.filter_by(user_id=user_id, product_id=id).first()
+    #     if not cart_item:
+    #         return make_response(jsonify({'error':'item not found'}),404)
 
-        cart_item.quantity = new_quantity
-        db.session.commit()
+    #     cart_item.quantity = new_quantity
+    #     db.session.commit()
         
-        # for attr, value in data.item():
-        #     if hasattr(cart_item, attr):
-        #         setattr(cart_item, attr, value)
-        # db.session.merge(cart_item)
-        db.session.commit() 
+    #     # for attr, value in data.item():
+    #     #     if hasattr(cart_item, attr):
+    #     #         setattr(cart_item, attr, value)
+    #     # db.session.merge(cart_item)
+    #     db.session.commit() 
 
-        return make_response(jsonify({'message': 'Cart quantity updated successfully'}), 200)
+    #     return make_response(jsonify({'message': 'Cart quantity updated successfully'}), 200)
         
     def delete(self, id):
         user_id = request.get_json()
@@ -282,7 +282,6 @@ class UserInfo(Resource):
     def get(self):
         users = [user.to_dict() for user in User.query.all()]
         return make_response(jsonify(users), 200)
-
 api.add_resource(UserInfo, '/users')
 
 class CheckEmail(Resource):
@@ -297,6 +296,23 @@ class CheckEmail(Resource):
 
         return make_response(jsonify({'available': True}),200)
 api.add_resource(CheckEmail, '/checkemail')
+
+class CreatePaymentIntent(Resource):
+    def post(self):
+        data = request.get_json()
+        amount = data.get('amount')
+        try:
+            # Create PaymentIntent with the amount
+            intent = stripe.PaymentIntent.create(
+                amount=amount,
+                currency='usd'
+            )
+            print('Stripe Response:', intent)  # Log response for debugging
+            return {'clientSecret': intent.client_secret}
+        except Exception as e:
+            print('Error:', str(e))  # Log errors for debugging
+            return {'error': str(e)}, 400
+api.add_resource(CreatePaymentIntent, '/create-payment-intent')
 
 class Orders(Resource):
     def post(self):

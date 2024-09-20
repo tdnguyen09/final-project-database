@@ -143,8 +143,8 @@ class User(db.Model,SerializerMixin):
                 'image': cart.product.image,
                 'price': cart.product.price,
                 'discount':cart.product.discount,
-                'is_is_new':cart.product.is_it_new,
-                'is_is_preorder': cart.product.is_it_preorder,
+                'is_it_new':cart.product.is_it_new,
+                'is_it_preorder': cart.product.is_it_preorder,
                 'is_it_clearance':cart.product.is_it_clearance,
                 'is_it_onsale': cart.product.is_it_onsale,
                 'quantity': cart.quantity

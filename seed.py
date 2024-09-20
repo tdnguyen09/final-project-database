@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 
 from config import app, db
-from models import User, Product
+from models import User, Product, Admin
 
 with app.app_context():
     print('Deleting existing product...')
     
 
     print('Creating product objects...')
+    admin1 = Admin(
+        username='admin1',
+        _password_hash='abc'
+    )
+
     lego_city_60373 = Product(
         name='LEGO City Fire Rescue Boat 60373',
         image="https://www.bigw.com.au/medias/sys_master/images/images/h0d/h02/34463990448158.jpg",
@@ -20,6 +25,7 @@ with app.app_context():
         is_it_new=False,
         is_it_clearance=False,
         is_it_onsale=False,
+        is_it_preorder=False,
         discount="0.00"
     )
     lego_city_60415 = Product(

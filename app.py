@@ -226,7 +226,7 @@ class UserUpdate(Resource):
         else:
             for attr, value in data.items():
                 if hasattr(user, attr):
-                    if attr in ['orders', 'products']:
+                    if attr in ['orders', 'products','carts']:
                         continue
                     setattr(user, attr, value)
             db.session.merge(user)

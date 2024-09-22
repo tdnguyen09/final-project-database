@@ -222,12 +222,16 @@ class UserUpdate(Resource):
         # user = User.query.filter(User.id == session.get('user_id')).first()
         user = User.query.filter(User.id == data.get('id')).first()
         if user is None:
-            return make_response(jsonify({'message':'user not found'}), 400)
+            return make_response(jsonify({'error':'user not found'}), 400)
         else:
             for attr, value in data.items():
                 if hasattr(user, attr):
                     if attr in ['orders', 'products','carts']:
                         continue
+                    if attr == 'email':
+                        check_user=User.query.filter_by(email=value).first()
+                        if check_user and check_user.id !=user.id:
+                            return make_response(jsonify({'error':'email is already exist'}),400)
                     setattr(user, attr, value)
             db.session.merge(user)
             db.session.commit()
@@ -307,10 +311,10 @@ class CreatePaymentIntent(Resource):
                 amount=amount,
                 currency='usd'
             )
-            print('Stripe Response:', intent)  # Log response for debugging
+            print('Stripe Response:', intent)
             return {'clientSecret': intent.client_secret}
         except Exception as e:
-            print('Error:', str(e))  # Log errors for debugging
+            print('Error:', str(e))
             return {'error': str(e)}, 400
 api.add_resource(CreatePaymentIntent, '/create-payment-intent')
 
@@ -365,11 +369,11 @@ class Admins(Resource):
         admins = [admin.to_dict() for admin in Admin.query.all()]
         return make_response(jsonify(admins), 200)
     def post(self):
-        usename = request.get_json()['username']
+        username = request.get_json()['username']
         password = request.get_json()['password']
 
         new_admin = Admin(
-            username = usename
+            username = username
         )
 
         new_admin.password_hash = password

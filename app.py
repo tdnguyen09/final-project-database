@@ -8,8 +8,7 @@ from config import db, api, app
 from models import Product, User, Admin, Order, OrderProduct, wishlist, Brand, Category, Cart
 import stripe
 
-# app.permanent_session_lifetime = timedelta(minutes=5)
-# app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
+
 
 # done
 class Products(Resource):
@@ -238,7 +237,7 @@ class UserUpdate(Resource):
 
         response_dict = user.to_dict()
         return make_response(response_dict, 200)
-        # return make_response(user)
+        
 api.add_resource(UserUpdate, '/update-detail')
 #done
 class Signup(Resource):
@@ -306,10 +305,9 @@ class CreatePaymentIntent(Resource):
         data = request.get_json()
         amount = data.get('amount')
         try:
-            # Create PaymentIntent with the amount
             intent = stripe.PaymentIntent.create(
                 amount=amount,
-                currency='usd'
+                currency='aud'
             )
             print('Stripe Response:', intent)
             return {'clientSecret': intent.client_secret}
@@ -419,15 +417,6 @@ class AdminDashboard(Resource):
         brand_name = data.get('brand')
         category_name = data.get('category')
 
-        # if product_weight:
-        #     try:
-        #         float_product_weight = float(product_weight)
-        #         return float_product_weight
-        #     except ValueError:
-        #         return make_response(jsonify({'error':'Invalid float conversion'}),400)
-        # else:
-        #     return make_response(jsonify({'error':'no data provided'}), 400)
-        
         if not name or not image or not price or not description:
             return make_response(jsonify({'message':'All fields are required'}), 400)
 

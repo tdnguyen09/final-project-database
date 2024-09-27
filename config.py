@@ -50,7 +50,7 @@ migrate = Migrate(app, db)
 
 api = Api(app)
 bcrypt = Bcrypt(app)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=['https://e-commerce-app-s5f4.onrender.com'])
 
 # if __name__ == "__main__":
 #     app.run(host='localhost', port=5000)
